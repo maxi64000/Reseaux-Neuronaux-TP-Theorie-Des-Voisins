@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+
+    <style>
+        #header {
+            float: left;
+            width: 100%;
+            height: 25px;
+            margin: 0px;
+            padding: 0px;
+        }
+        #header p {
+            float: left;
+            width: 100%;
+            margin: 0px;
+            padding: 0px;
+            text-align: center;
+        }
+        #header p label {
+            padding: 0px 25px 0px 0px;;
+        }
+        #color {
+            float: left;
+            width: 100%;
+            height: 25px;
+            margin: 0px;
+            padding: 0px;
+        }
+        #color div {
+            float: left;
+            width: 23%;
+            height: 25px;;
+            margin: 0px 1%;
+            padding: 0px;
+            cursor: pointer;
+        }
+        #color div p {
+            text-align: center;
+            line-height: 25px;
+            margin: 0px;
+            padding: 0px;
+        }
+        #green {
+            background: green;
+        }
+        #yellow {
+            background: yellow;
+        }
+        #red {
+            background: red;
+        }
+        #silver {
+            background: silver;
+            display: none;
+        }
+        #canvas {
+            margin: 25px 0px 0px 50px;
+        }
+    </style>
+
+</head>
+<body onload="main()">
+    <div id="header">
+        <p><label id="age"></label><label id="revenue"></label></p>
+    </div>
+    <div id="color">
+        <div id="green" onclick="setColor(this)"><p>Oui</p></div>
+        <div id="yellow" onclick="setColor(this)"><p>Peut être</p></div>
+        <div id="red" onclick="setColor(this)"><p>Non</p></div>
+        <div id="silver" onclick="setColor(this)"><p>Automatique</p></div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        var canvas = document.getElementById("canvas");
+        var context = canvas.getContext("2d");
+        var color = "yellow";
+        var xMax = 100;
+        var xDist = 1;
+        var yMax = 3000;
+        var yDist = 100;
+        var listeX = [];
+        var listeY = [];
+        var listePoints = [];
+        var numberToCheck = 10;
+
+        // Permet d'obtenir la position de la souris
+        function getMousePos(canvas, evt) {
+            var rect = canvas.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+
+        // Modifie la couleur affiché
+        function setColor(element) {
+            color = element.id;
+        }
+
+        function main() {
+            canvas.width = document.body.clientWidth - 100;
+            canvas.height = window.innerHeight - 100;
+
+            xMax += 1;
+            yMax += 15;
+
+            context.fillStyle = "#000000";
+
+            // tracer ligne des X
+            for (var x = 0; x < canvas.width; x++) {
+                context.fillRect(x, canvas.height - 1, 1, 1);
+            }
+
+            // Tracer ligne des Y
+            for (var y = 0; y < canvas.height; y++) {
+                context.fillRect(0, y, 1, 1);
+            }
+
+            // Générer les X
+            for (var x = 1; x < xMax / xDist; x++) {
+                context.fillText(xDist * x, x * (canvas.width / (xMax / xDist)) - 1, canvas.height - 5);
+                listeX.push({pos: x * (canvas.width / (xMax / xDist)) - 1, value: xDist * x});
+            }
+
+            // Générer les Y
+            for (var y = 1; y < yMax / yDist; y++) {
+                context.fillText(yDist * y, 5, canvas.height - (canvas.height / (yMax / yDist) * y) + 3);
+                listeY.push({pos: canvas.height - (canvas.height / (yMax / yDist) * y) + 3, value: yDist * y});
+            }
+
+            // Tracer interligne X
+            for (var y = 1; y < yMax / yDist; y++) {
+                context.fillStyle = "#C0C0C0";
+                var height = canvas.height - (canvas.height / (yMax / yDist) * y);
+                for (var x = 50; x <= canvas.width; x++) {
+                    context.fillRect(x, height, 1, 1);
+                }
+            }
+
+            // permet d'aligner le point définit par le curseur de la souris avec le point le plus proche
+            // Il faut que chaques points représente un âge et un salaire définit.
+            function getPositionMin(pos, positionList) {
+                var min = 999999;
+                var positionMin = [];
+
+                for (var i = 0; i < positionList.length; i++) {
+                    if ((Math.abs(positionList[i].pos - pos)) < min) {
+                        min = Math.abs(positionList[i].pos - pos);
+                        positionMin = positionList[i];
+                    }
+                }
+
+                return positionMin;
+            }
+
+            // permet de séléctionner les points les plus proche d'un point donné
+
+            /*
+            On boucle sur tous les points affichés
+            On ajoute le plus proche à un tableau
+            puis n'arrète pas  tant que le nombre adéquat de voisins est trouvé
+            a chaque fois qu'un voisin est trouvé, on ajoute sa position dans un tableau afin de vérifier lors des futurs boucles qu'il n'a pas déja été séléctionné
+             */
+
+            function getPointMin(x, y) {
+                var minPoint = [];
+                var id = 0;
+                var listeMinPoint = [];
+                var listePointChecked = [];
+
+                while (listeMinPoint.length < numberToCheck) {
+                    var Min = 999999;
+
+                    for (var i = 0; i < listePoints.length; i++) {
+                        if (listePointChecked.indexOf(i) == -1) {
+                            if ((Math.abs(listePoints[i][0] - x) + (Math.abs(listePoints[i][1] - y))) < Min) {
+                                Min = Math.abs(listePoints[i][0] - x) + Math.abs(listePoints[i][1] - y);
+                                minPoint = listePoints[i];
+                                id = i;
+                            }
+                        }
+                    }
+
+                    listeMinPoint.push(minPoint);
+                    listePointChecked.push(id);
+                }
+
+                return listeMinPoint;
+            }
+
+            //  Affiche l'age et le salaire lorsque la souris bouge
+            canvas.addEventListener("mousemove", function(evt) {
+                var mousePos = getMousePos(canvas, evt);
+
+                var x = getPositionMin(mousePos.x, listeX).value;
+                var y = getPositionMin(mousePos.y, listeY).value;
+
+                document.getElementById("age").innerHTML = "Age : " + x + " ans";
+                document.getElementById("revenue").innerHTML = "Revenue : " + y + "€";
+
+            }, false);
+
+            //  Ajoute un point au clic
+            canvas.addEventListener("click", function(evt) {
+                var mousePos = getMousePos(canvas, evt);
+                var x = getPositionMin(mousePos.x, listeX).pos;
+                var y = getPositionMin(mousePos.y, listeY).pos;
+                var exist = false;
+                var numberOfListePointsExisting = 0;
+                var numberGreen = 0;
+                var numberYellow = 0;
+                var numberRed = 0;
+                var theColor = [];
+
+                // Si l'option choisit est : "automatique"
+                if (color == "silver") {
+
+                    // On récupère les voisins et on compte le nombres de points par types
+                    for (var i = 0; i < getPointMin(x, y).length; i++) {
+                        if (getPointMin(x, y)[i][2] == "green") {
+                            numberGreen++;
+                        }
+                        else if (getPointMin(x, y)[i][2] == "yellow") {
+                            numberYellow++;
+                        }
+                        else {
+                            numberRed++;
+                        }
+                    }
+
+                    // On vérifie pour chaques types si ils sont le plus grand nombre trouvé
+                    if (numberGreen == Math.max(numberGreen, numberYellow, numberRed)) {
+                        theColor.push("green");
+                    }
+                    if (numberYellow == Math.max(numberGreen, numberYellow, numberRed)) {
+                        theColor.push("yellow");
+                    }
+                    if (numberRed == Math.max(numberGreen, numberYellow, numberRed)) {
+                        theColor.push("red");
+                    }
+
+                    // Si il y a plusieurs types qui ont le plus grand nombre trouvé alors ne peut pas traiter ce cas
+                    if (theColor.length > 1) {
+                        alert("Impossible d'établir une couleur équitable...");
+                    }
+                    else {
+                        context.fillStyle = theColor[0];
+                        context.fillRect(x - 5, y - 7, 10, 10);
+
+                        // On vérifie que le point que l'on veut créé n'éxiste pas
+                        // Si oui on remplace l'ancien par le nouveau
+                        for (var i = 0; i < listePoints.length; i++) {
+                            if (listePoints[i][0] == x && listePoints[i][1] == y) {
+                                exist = true;
+                                numberOfListePointsExisting = i;
+                            }
+                        }
+
+                        if (exist) {
+                            listePoints[numberOfListePointsExisting] = [x, y, theColor[0]];
+                        }
+                        else {
+                            listePoints.push([x, y, theColor[0]]);
+                        }
+                    }
+                }
+                else {
+                    context.fillStyle = color;
+                    context.fillRect(x - 5, y - 7, 10, 10);
+
+                    // On vérifie que le point que l'on veut créé n'éxiste pas
+                    // Si oui on remplace l'ancien par le nouveau
+                    for (var i = 0; i < listePoints.length; i++) {
+                        if (listePoints[i][0] == x && listePoints[i][1] == y) {
+                            exist = true;
+                            numberOfListePointsExisting = i;
+                        }
+                    }
+
+                    if (exist) {
+                        listePoints[numberOfListePointsExisting] = [x, y, color];
+                    }
+                    else {
+                        listePoints.push([x, y, color]);
+                    }
+                }
+
+                // on ne permet la génération automatique de la couleur que si un certain nombre de point éxiste déja
+                if (listePoints.length >= numberToCheck) {
+                    document.getElementById("silver").style.display = "block";
+                }
+            }, false);
+        }
+    </script>
+
+</body>
+</html>
+\ No newline at end of file
